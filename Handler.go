@@ -69,6 +69,18 @@ func GetServiceAccountClient(serviceAccountCredential jwt.Config) *http.Client {
 	return client
 }
 
+func GetServiceAccount(subject, serviceAccountKeyPath string, scopes []string) *http.Client {
+	file := utils4go.ReadFile(serviceAccountKeyPath)
+	jwtConfig := utils4go.GetObj(google.JWTConfigFromJSON(file)).(*jwt.Config)
+	jwtConfig.Subject = subject
+	jwtConfig.Scopes = userScopes
+	if scopes != nil {
+		jwtConfig.Scopes = scopes
+	}
+	client := jwtConfig.Client(context.Background())
+	return client
+}
+
 // GetOauth2ClientFromFilepath Retrieves http.Client using the clientSecrets file via the given filepath
 func GetOauth2ClientFromFilepath(clientSecretsFilePath string) *http.Client {
 	config := &oauth2.Config{}
