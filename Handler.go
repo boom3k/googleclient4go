@@ -4,18 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/oauth2"
 	"net/http"
 	"os"
 	"time"
+
+	"golang.org/x/oauth2"
 
 	"github.com/boom3k/utils4go"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 )
 
-func main() {
-}
+func main() {}
 
 var timeFormat = "2006-01-02T15:04:05Z07:00"
 var adminScopes = []string{"https://www.googleapis.com/auth/admin.reports.audit.readonly",
