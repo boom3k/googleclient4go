@@ -1,4 +1,5 @@
-package main
+package googleclient4go
+
 import (
 	"context"
 	"encoding/json"
