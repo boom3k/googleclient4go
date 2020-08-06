@@ -1,16 +1,21 @@
 package googleclient4go
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
+	utils4go "github.com/boom3k/utils4go"
+	admin "google.golang.org/api/admin/directory/v1"
+	"google.golang.org/api/option"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/oauth2"
 
-	"github.com/boom3k/utils4go"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 )
@@ -18,7 +23,7 @@ import (
 func main() {}
 
 var timeFormat = "2006-01-02T15:04:05Z07:00"
-var adminScopes = []string{"https://www.googleapis.com/auth/admin.reports.audit.readonly",
+var defaultOAuth2Scopes = []string{"https://www.googleapis.com/auth/admin.reports.audit.readonly",
 	"https://www.googleapis.com/auth/admin.reports.usage.readonly",
 	"https://www.googleapis.com/auth/admin.directory.user",
 	"https://www.googleapis.com/auth/admin.directory.group.member",
@@ -34,9 +39,8 @@ var adminScopes = []string{"https://www.googleapis.com/auth/admin.reports.audit.
 	"https://www.googleapis.com/auth/cloud-platform",
 	"https://www.googleapis.com/auth/cloud_search",
 	"https://www.googleapis.com/auth/apps.licensing",
-	"https://www.googleapis.com/auth/admin.directory.device.mobile",
-}
-var userScopes = []string{"https://www.googleapis.com/auth/drive",
+	"https://www.googleapis.com/auth/admin.directory.device.mobile"}
+var defaultServiceAccountScopes = []string{"https://www.googleapis.com/auth/drive",
 	"https://mail.google.com/",
 	"https://sites.google.com/feeds",
 	"https://www.google.com/m8/feeds",
@@ -49,88 +53,104 @@ var userScopes = []string{"https://www.googleapis.com/auth/drive",
 	"https://www.googleapis.com/auth/userinfo.email",
 	"https://www.googleapis.com/auth/userinfo.profile"}
 
-// GetJWTFromFile rfgs
-func GetJWTFromFile(serviceAccountKeyData []byte) *jwt.Config {
-	jwtConfig := utils4go.GetObj(google.JWTConfigFromJSON(serviceAccountKeyData)).(*jwt.Config)
+/*ServiceAccount------------------------------------------------------------------------------------------------------*/
+func GetJWT(userEmail, serviceAccountKeyPath string) *jwt.Config {
+	file, _ := ioutil.ReadFile(serviceAccountKeyPath)
+	jwtConfig, _ := google.JWTConfigFromJSON(file)
+	jwtConfig.Subject = userEmail
 	return jwtConfig
 }
 
-// GetUserJWT feaf
-func GetUserJWT(subject string) *jwt.Config {
-	jwtConfig := GetJWTFromFile(utils4go.ReadFile("sakey.json"))
-	jwtConfig.Subject = subject
-	return jwtConfig
-}
-
-// GetServiceAccountClient returns the http.Client using a serviceaccount credential jwt.Config type
-func GetServiceAccountClient(serviceAccountCredential jwt.Config) *http.Client {
-	serviceAccountCredential.Scopes = userScopes
-	client := serviceAccountCredential.Client(context.Background())
-	return client
-}
-
-func GetServiceAccount(subject, serviceAccountKeyPath string, scopes []string) *http.Client {
-	file := utils4go.ReadFile(serviceAccountKeyPath)
-	jwtConfig := utils4go.GetObj(google.JWTConfigFromJSON(file)).(*jwt.Config)
-	jwtConfig.Subject = subject
+func GetServiceAccountClient(userEmail, serviceAccountKeyPath string, userScopes []string) *http.Client {
+	jwtConfig := GetJWT(userEmail, serviceAccountKeyPath)
+	if userScopes == nil {
+		userScopes = defaultServiceAccountScopes
+	}
 	jwtConfig.Scopes = userScopes
-	if scopes != nil {
-		jwtConfig.Scopes = scopes
+	return jwtConfig.Client(context.Background())
+}
+
+/*OAuth2--------------------------------------------------------------------------------------------------------------*/
+func GetOAuth2Client(clientId, clientSecret, accessToken, refreshToken, expiry string) *http.Client {
+	config := &oauth2.Config{
+		ClientID:     clientId,
+		ClientSecret: clientSecret,
+		RedirectURL:  "urn:ietf:wg:oauth:2.0:oob",
+		Endpoint: oauth2.Endpoint{
+			AuthURL:   "https://accounts.google.com/o/oauth2/auth",
+			TokenURL:  "https://oauth2.googleapis.com/token",
+			AuthStyle: oauth2.AuthStyleAutoDetect},
 	}
-	client := jwtConfig.Client(context.Background())
-	return client
+	time, _ := time.Parse(timeFormat, expiry)
+	oAuth2Tokens := &oauth2.Token{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		TokenType:    "Bearer",
+		Expiry:       time}
+	oAuth2Tokens.AccessToken = accessToken
+	oAuth2Tokens.RefreshToken = refreshToken
+	return config.Client(context.Background(), oAuth2Tokens)
 }
 
-// GetOauth2ClientFromFilepath Retrieves http.Client using the clientSecrets file via the given filepath
-func GetOauth2ClientFromFilepath(clientSecretsFilePath string) *http.Client {
-	config := &oauth2.Config{}
-	config = utils4go.GetObj(google.ConfigFromJSON(utils4go.ReadFile(clientSecretsFilePath))).(*oauth2.Config)
-	token := &oauth2.Token{}
-	tokenJson := utils4go.ReadJsonFile(clientSecretsFilePath)["tokens"]
-	token.AccessToken = utils4go.GetJsonKey(tokenJson, "access_token").(string)
-	token.RefreshToken = utils4go.GetJsonKey(tokenJson, "refresh_token").(string)
-	token.TokenType = utils4go.GetJsonKey(tokenJson, "token_type").(string)
-	expiry := utils4go.GetJsonKey(tokenJson, "expiry").(string)
-	token.Expiry = utils4go.GetObj(time.Parse(timeFormat, expiry)).(time.Time)
-	return config.Client(context.Background(), token)
+func GetOAuth2ClientUsingFile(clientSecretTokensFilePath string) *http.Client {
+	fileAsJSON := utils4go.ParseJSONFileToMap(clientSecretTokensFilePath)
+	clientId := utils4go.GetJsonValue(fileAsJSON["installed"], "client_id").(string)
+	clientSecret := utils4go.GetJsonValue(fileAsJSON["installed"], "client_secret").(string)
+	accesstoken := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "access_token").(string)
+	refreshToken := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "refresh_token").(string)
+	expiry := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "expiry").(string)
+	return GetOAuth2Client(clientId, clientSecret, accesstoken, refreshToken, expiry)
 }
 
-// Generates the token
-func GenerateTokens(clientSecretsFilePath string) {
-	//Extract jsonData from the JsonFile
-	jsonData := utils4go.ReadFile(clientSecretsFilePath)
-	clientSecretJson := make(map[string]interface{})
-	clientSecretJson["installed"] = utils4go.ReadJsonFile(clientSecretsFilePath)["installed"]
-	oauth2Config := utils4go.GetObj(google.ConfigFromJSON(jsonData)).(*oauth2.Config)
-	oauth2Config.Scopes = adminScopes
-	for i := range userScopes {
-		oauth2Config.Scopes = append(oauth2Config.Scopes, userScopes[i])
+func SimpleOAuth2TokenGenerator(clientSecretsFilePath string, scopes []string) {
+	adminEmail := utils4go.ReadLine("Enter your admin email address: ")
+	bytes, _ := ioutil.ReadFile(clientSecretsFilePath)
+	oauth2Config, _ := google.ConfigFromJSON(bytes)
+	if scopes == nil {
+		scopes = defaultOAuth2Scopes
+		for i := range defaultServiceAccountScopes {
+			scopes = append(scopes, defaultServiceAccountScopes[i])
+		}
 	}
+	oauth2Config.Scopes = scopes
 
-	tokenMap := make(map[string]interface{})
-	tokenMap["created"] = time.Now().Format("Monday, 2006-January-02, 15:04:05PM ")
-	tokenMap["oauth2_scopes"] = adminScopes
-	tokenMap["service_account_scopes"] = userScopes
-	userEmail := utils4go.ReadLine("Enter your admin email: ")
-	tokenMap["authorized_user"] = userEmail
-	tokens := beginOauth2Flow(oauth2Config)
-	tokenMap["access_token"] = tokens.AccessToken
-	tokenMap["refresh_token"] = tokens.RefreshToken
-	tokenMap["token_type"] = tokens.TokenType
-	tokenMap["expiry"] = tokens.Expiry
-	clientSecretJson["tokens"] = tokenMap
-	newClientSecretsFilePath := "cstokens.json"
-	fmt.Println("Saving tokens to:", newClientSecretsFilePath)
-	file := utils4go.GetObj(os.OpenFile(newClientSecretsFilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)).(*os.File)
-	defer file.Close()
-	json.NewEncoder(file).Encode(clientSecretJson)
+	tokens := GetTokensFromOAuth2Flow(oauth2Config.ClientID, oauth2Config.ClientSecret, oauth2Config.Scopes)
+	WriteTokens("oauth_token.json", adminEmail, *oauth2Config, *tokens, defaultServiceAccountScopes)
 }
 
-//
-func beginOauth2Flow(oauth2Config *oauth2.Config) *oauth2.Token {
-	//Via Web, generate the authentication URL from the oauth2Config file
-	authenticationURL := oauth2Config.AuthCodeURL("state-oauth2Token", oauth2.AccessTypeOffline)
+func GetTokensFromOAuth2Flow(clientId, clientSecret string, scopes []string) *oauth2.Token {
+	config := &oauth2.Config{
+		ClientID:     clientId,
+		ClientSecret: clientSecret,
+		RedirectURL:  "urn:ietf:wg:oauth:2.0:oob",
+		Scopes:       scopes,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:   "https://accounts.google.com/o/oauth2/auth",
+			TokenURL:  "https://oauth2.googleapis.com/token",
+			AuthStyle: oauth2.AuthStyleAutoDetect},
+	}
+	authenticationURL := config.AuthCodeURL("state-oauth2Token", oauth2.AccessTypeOffline)
 	fmt.Println("Go to the following link in your browser then type the authorization code:", authenticationURL)
-	tokens := utils4go.GetObj(oauth2Config.Exchange(context.TODO(), utils4go.ReadLine("Enter the code:"))).(*oauth2.Token)
-	return tokens
+	fmt.Println("Enter the code:")
+	input, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+	tokenResponse, _ := config.Exchange(context.TODO(), input)
+	return tokenResponse
+}
+
+func WriteTokens(newFilePath, adminEmail string, oauth2Config oauth2.Config, tokens oauth2.Token, scopes []string) {
+	file, _ := os.OpenFile(newFilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	defer file.Close()
+	newFileData := make(map[string]interface{})
+	newFileData["installed"] = oauth2Config
+	newFileData["oauth2_tokens"] = tokens
+	newFileData["serviceAccountScopes"] = scopes
+	adminInfo := make(map[string]interface{})
+	adminInfo["adminEmail"] = adminEmail
+	adminInfo["domain"] = strings.Split(adminEmail, "@")[1]
+	fmt.Println("Pulling customerID using: AdminSDK/DirectoryAPI/Users/Get/")
+	service, _ := admin.NewService(context.Background(), option.WithHTTPClient(GetOAuth2Client(oauth2Config.ClientID, oauth2Config.ClientSecret, tokens.AccessToken, tokens.RefreshToken, tokens.Expiry.String())))
+	adminProfile, _ := service.Users.Get(adminEmail).Do()
+	adminInfo["customerId"] = adminProfile.CustomerId
+	newFileData["authenticated_user"] = adminInfo
+	json.NewEncoder(file).Encode(newFileData)
 }
