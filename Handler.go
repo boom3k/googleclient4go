@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	utils4go "github.com/boom3k/utils4go"
+	"github.com/boom3k/utils4go"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/option"
 	"io/ioutil"
