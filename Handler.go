@@ -92,8 +92,8 @@ func GetOAuth2Client(clientId, clientSecret, accessToken, refreshToken, expiry s
 
 func GetOAuth2ClientUsingFile(clientSecretTokensFilePath string) *http.Client {
 	fileAsJSON := utils4go.ParseJSONFileToMap(clientSecretTokensFilePath)
-	clientId := utils4go.GetJsonValue(fileAsJSON["installed"], "ClientID").(string)
-	clientSecret := utils4go.GetJsonValue(fileAsJSON["installed"], "ClientSecret").(string)
+	clientId := utils4go.GetJsonValue(fileAsJSON["installed"], "client_id").(string)
+	clientSecret := utils4go.GetJsonValue(fileAsJSON["installed"], "client_id").(string)
 	accesstoken := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "access_token").(string)
 	refreshToken := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "refresh_token").(string)
 	expiry := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "expiry").(string)
@@ -112,7 +112,7 @@ func SimpleOAuth2TokenGenerator(clientSecretsFilePath string, scopes []string) {
 	oauth2Config.Scopes = scopes
 	adminEmail := utils4go.ReadLine("Enter your admin email address: ")
 	tokens := GetTokensFromOAuth2Flow(oauth2Config.ClientID, oauth2Config.ClientSecret, oauth2Config.Scopes)
-	WriteTokens("oauth_token.json", adminEmail, *oauth2Config, *tokens, defaultServiceAccountScopes)
+	WriteTokens("oauth_token.json", adminEmail, clientSecretsFilePath, *tokens, defaultServiceAccountScopes)
 }
 
 func GetTokensFromOAuth2Flow(clientId, clientSecret string, scopes []string) *oauth2.Token {
@@ -134,16 +134,17 @@ func GetTokensFromOAuth2Flow(clientId, clientSecret string, scopes []string) *oa
 	return tokenResponse
 }
 
-func WriteTokens(newFilePath, adminEmail string, oauth2Config oauth2.Config, tokens oauth2.Token, scopes []string) {
+func WriteTokens(newFilePath, adminEmail, clientSecretFilePath string, tokens oauth2.Token, scopes []string) {
 	file, _ := os.OpenFile(newFilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	defer file.Close()
-	newFileData := make(map[string]interface{})
-	newFileData["installed"] = oauth2Config
-	newFileData["oauth2_tokens"] = tokens
-	newFileData["serviceAccountScopes"] = scopes
+	FILEDATA := make(map[string]interface{})
+	clientSecretFileJSON := utils4go.ParseJSONFileToMap(clientSecretFilePath)
+	FILEDATA["installed"] = utils4go.GetJsonValue(clientSecretFileJSON, "installed")
+	FILEDATA["oauth2_tokens"] = tokens
+	FILEDATA["serviceAccountScopes"] = scopes
 	adminInfo := make(map[string]interface{})
 	adminInfo["adminEmail"] = adminEmail
 	adminInfo["domain"] = strings.Split(adminEmail, "@")[1]
-	newFileData["authenticated_user"] = adminInfo
-	json.NewEncoder(file).Encode(newFileData)
+	FILEDATA["authenticated_user"] = adminInfo
+	json.NewEncoder(file).Encode(FILEDATA)
 }
