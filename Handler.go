@@ -141,7 +141,7 @@ func WriteTokens(newFilePath, adminEmail, clientSecretFilePath string, tokens oa
 	clientSecretFileJSON := utils4go.ParseJSONFileToMap(clientSecretFilePath)
 	FILEDATA["installed"] = utils4go.GetJsonValue(clientSecretFileJSON, "installed")
 	FILEDATA["oauth2_tokens"] = tokens
-	FILEDATA["serviceAccountScopes"] = scopes
+	FILEDATA["scopes"] = scopes
 	adminInfo := make(map[string]interface{})
 	adminInfo["adminEmail"] = adminEmail
 	adminInfo["domain"] = strings.Split(adminEmail, "@")[1]
