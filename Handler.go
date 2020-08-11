@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/boom3k/utils4go"
+	admin "google.golang.org/api/admin/directory/v1"
+	"google.golang.org/api/option"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -137,6 +139,8 @@ func GetTokensFromOAuth2Flow(clientId, clientSecret string, scopes []string) *oa
 func WriteTokens(newFilePath, adminEmail, clientSecretFilePath string, tokens oauth2.Token, scopes []string) {
 	file, _ := os.OpenFile(newFilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	defer file.Close()
+	configFile, _ := ioutil.ReadFile(clientSecretFilePath)
+	oauth2Config, _ := google.ConfigFromJSON(configFile)
 	FILEDATA := make(map[string]interface{})
 	clientSecretFileJSON := utils4go.ParseJSONFileToMap(clientSecretFilePath)
 	FILEDATA["installed"] = utils4go.GetJsonValue(clientSecretFileJSON, "installed")
@@ -145,6 +149,15 @@ func WriteTokens(newFilePath, adminEmail, clientSecretFilePath string, tokens oa
 	adminInfo := make(map[string]interface{})
 	adminInfo["adminEmail"] = adminEmail
 	adminInfo["domain"] = strings.Split(adminEmail, "@")[1]
+	oauth2Client := GetOAuth2Client(
+		oauth2Config.ClientID,
+		oauth2Config.ClientSecret,
+		tokens.AccessToken,
+		tokens.RefreshToken,
+		tokens.Expiry.String())
+	directoryService, _ := admin.NewService(context.Background(), option.WithHTTPClient(oauth2Client))
+	user, _ := directoryService.Users.Get(adminEmail).Do()
+	adminInfo["customer_id"] = user.CustomerId
 	FILEDATA["authenticated_user"] = adminInfo
 	json.NewEncoder(file).Encode(FILEDATA)
 }
