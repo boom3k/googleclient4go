@@ -1,4 +1,4 @@
-package googleclient4go
+package main
 
 import (
 	"bufio"
@@ -15,14 +15,19 @@ import (
 	"time"
 
 	"golang.org/x/oauth2"
-
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 )
 
-func main() {}
+func main() {
+	fmt.Println("Build: Reduce")
+	SimpleOAuth2TokenGenerator("client_secrets.json", nil)
+	defer os.Exit(0)
+}
 
 var timeFormat = "2006-01-02T15:04:05Z07:00"
+
+//Add new Oauth2 Scopes Here
 var defaultOAuth2Scopes = []string{"https://www.googleapis.com/auth/admin.reports.audit.readonly",
 	"https://www.googleapis.com/auth/admin.reports.usage.readonly",
 	"https://www.googleapis.com/auth/admin.directory.user",
@@ -112,9 +117,9 @@ func SimpleOAuth2TokenGenerator(clientSecretsFilePath string, scopes []string) {
 		}
 	}
 	oauth2Config.Scopes = scopes
-	adminEmail := utils4go.ReadLine("Enter your admin email address: ")
+	adminEmail := utils4go.Readline("Enter your admin email address: ")
 	tokens := GetTokensFromOAuth2Flow(oauth2Config.ClientID, oauth2Config.ClientSecret, oauth2Config.Scopes)
-	WriteTokens("oauth_token.json", adminEmail, clientSecretsFilePath, *tokens, defaultServiceAccountScopes)
+	WriteTokens("tokens.json", adminEmail, clientSecretsFilePath, *tokens, defaultServiceAccountScopes)
 }
 
 func GetTokensFromOAuth2Flow(clientId, clientSecret string, scopes []string) *oauth2.Token {
@@ -139,16 +144,16 @@ func GetTokensFromOAuth2Flow(clientId, clientSecret string, scopes []string) *oa
 func WriteTokens(newFilePath, adminEmail, clientSecretFilePath string, tokens oauth2.Token, scopes []string) {
 	file, _ := os.OpenFile(newFilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	defer file.Close()
-	configFile, _ := ioutil.ReadFile(clientSecretFilePath)
-	oauth2Config, _ := google.ConfigFromJSON(configFile)
 	FILEDATA := make(map[string]interface{})
 	clientSecretFileJSON := utils4go.ParseJSONFileToMap(clientSecretFilePath)
 	FILEDATA["installed"] = utils4go.GetJsonValue(clientSecretFileJSON, "installed")
-	FILEDATA["oauth2_tokens"] = tokens
+	FILEDATA["oauth2"] = tokens
 	FILEDATA["scopes"] = scopes
 	adminInfo := make(map[string]interface{})
 	adminInfo["adminEmail"] = adminEmail
 	adminInfo["domain"] = strings.Split(adminEmail, "@")[1]
+	configFile, _ := ioutil.ReadFile(clientSecretFilePath)
+	oauth2Config, _ := google.ConfigFromJSON(configFile)
 	oauth2Client := GetOAuth2Client(
 		oauth2Config.ClientID,
 		oauth2Config.ClientSecret,
@@ -156,7 +161,12 @@ func WriteTokens(newFilePath, adminEmail, clientSecretFilePath string, tokens oa
 		tokens.RefreshToken,
 		tokens.Expiry.String())
 	directoryService, _ := admin.NewService(context.Background(), option.WithHTTPClient(oauth2Client))
-	user, _ := directoryService.Users.Get(adminEmail).Do()
+	user, err := directoryService.Users.Get(adminEmail).Do()
+	if err != nil {
+		fmt.Println(err.Error())
+		panic(err)
+		os.Exit(0)
+	}
 	adminInfo["customer_id"] = user.CustomerId
 	FILEDATA["authenticated_user"] = adminInfo
 	json.NewEncoder(file).Encode(FILEDATA)
