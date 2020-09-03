@@ -20,9 +20,9 @@ import (
 )
 
 func main() {
-	fmt.Println("Build: Reduce")
+	/*fmt.Println("Build: Reduce")
 	SimpleOAuth2TokenGenerator("client_secrets.json", nil)
-	defer os.Exit(0)
+	defer os.Exit(0)*/
 }
 
 var timeFormat = "2006-01-02T15:04:05Z07:00"
