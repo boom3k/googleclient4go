@@ -1,4 +1,4 @@
-package main
+package googleclient4go
 
 import (
 	"bufio"
