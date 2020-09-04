@@ -1,4 +1,4 @@
-package googleclient4go
+package main
 
 import (
 	"bufio"
@@ -20,6 +20,7 @@ import (
 )
 
 func main() {
+	SimpleOAuth2TokenGenerator(utils4go.Readline("ClientSecretFilePath: "), nil)
 	/*fmt.Println("Build: Reduce")
 	SimpleOAuth2TokenGenerator("client_secrets.json", nil)
 	defer os.Exit(0)*/
@@ -119,7 +120,7 @@ func SimpleOAuth2TokenGenerator(clientSecretsFilePath string, scopes []string) {
 	oauth2Config.Scopes = scopes
 	adminEmail := utils4go.Readline("Enter your admin email address: ")
 	tokens := GetTokensFromOAuth2Flow(oauth2Config.ClientID, oauth2Config.ClientSecret, oauth2Config.Scopes)
-	WriteTokens("tokens.json", adminEmail, clientSecretsFilePath, *tokens, defaultServiceAccountScopes)
+	WriteTokens(adminEmail, clientSecretsFilePath, *tokens, defaultServiceAccountScopes)
 }
 
 func GetTokensFromOAuth2Flow(clientId, clientSecret string, scopes []string) *oauth2.Token {
@@ -141,9 +142,7 @@ func GetTokensFromOAuth2Flow(clientId, clientSecret string, scopes []string) *oa
 	return tokenResponse
 }
 
-func WriteTokens(newFilePath, adminEmail, clientSecretFilePath string, tokens oauth2.Token, scopes []string) {
-	file, _ := os.OpenFile(newFilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	defer file.Close()
+func WriteTokens(adminEmail, clientSecretFilePath string, tokens oauth2.Token, scopes []string) {
 	FILEDATA := make(map[string]interface{})
 	clientSecretFileJSON := utils4go.ParseJSONFileToMap(clientSecretFilePath)
 	FILEDATA["installed"] = utils4go.GetJsonValue(clientSecretFileJSON, "installed")
@@ -169,5 +168,8 @@ func WriteTokens(newFilePath, adminEmail, clientSecretFilePath string, tokens oa
 	}
 	adminInfo["customer_id"] = user.CustomerId
 	FILEDATA["authenticated_user"] = adminInfo
+	projectId := utils4go.GetJsonValue(FILEDATA["installed"], "project_id").(string)
+	file, _ := os.OpenFile(projectId+"_token.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	defer file.Close()
 	json.NewEncoder(file).Encode(FILEDATA)
 }
