@@ -1,6 +1,6 @@
-module github.com/boom3k/googleclient4go
+module googleclient4go
 
-go 1.14
+go 1.15
 
 require (
 	github.com/boom3k/utils4go v0.0.0-20200903045447-7c7fcf23db96
