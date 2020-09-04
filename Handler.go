@@ -1,4 +1,4 @@
-package main
+package googleclient4go
 
 import (
 	"bufio"
@@ -20,7 +20,6 @@ import (
 )
 
 func main() {
-	SimpleOAuth2TokenGenerator(utils4go.Readline("ClientSecretFilePath: "), nil)
 	/*fmt.Println("Build: Reduce")
 	SimpleOAuth2TokenGenerator("client_secrets.json", nil)
 	defer os.Exit(0)*/
