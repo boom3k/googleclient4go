@@ -1,4 +1,4 @@
-module googleclient4go
+module github.com/boom3k/googleclient4go
 
 go 1.15
 
