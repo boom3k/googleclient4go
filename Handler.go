@@ -61,9 +61,9 @@ var defaultServiceAccountScopes = []string{"https://www.googleapis.com/auth/driv
 /*ServiceAccount------------------------------------------------------------------------------------------------------*/
 func GetJWT(userEmail, serviceAccountKeyPath string) *jwt.Config {
 	file, err := ioutil.ReadFile(serviceAccountKeyPath)
-	utils4go.Check(err)
+	utils4go.CatchException(err)
 	jwtConfig, err := google.JWTConfigFromJSON(file)
-	utils4go.Check(err)
+	utils4go.CatchException(err)
 	jwtConfig.Subject = userEmail
 	return jwtConfig
 }
@@ -89,7 +89,7 @@ func GetOAuth2Client(clientId, clientSecret, accessToken, refreshToken, expiry s
 			AuthStyle: oauth2.AuthStyleAutoDetect},
 	}
 	time, err := time.Parse(timeFormat, expiry)
-	utils4go.Check(err)
+	utils4go.CatchException(err)
 	oAuth2Tokens := &oauth2.Token{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -112,7 +112,7 @@ func GetOAuth2ClientUsingFile(clientSecretTokensFilePath string) *http.Client {
 
 func SimpleOAuth2TokenGenerator(clientSecretsFilePath string, scopes []string) {
 	bytes, err := ioutil.ReadFile(clientSecretsFilePath)
-	utils4go.Check(err)
+	utils4go.CatchException(err)
 	oauth2Config, err := google.ConfigFromJSON(bytes)
 	if scopes == nil {
 		scopes = defaultOAuth2Scopes
@@ -141,9 +141,9 @@ func GetTokensFromOAuth2Flow(clientId, clientSecret string, scopes []string) *oa
 	fmt.Println("Go to the following link in your browser then type the authorization code:", authenticationURL)
 	fmt.Println("Enter the code:")
 	input, err := bufio.NewReader(os.Stdin).ReadString('\n')
-	utils4go.Check(err)
+	utils4go.CatchException(err)
 	tokenResponse, err := config.Exchange(context.TODO(), input)
-	utils4go.Check(err)
+	utils4go.CatchException(err)
 	return tokenResponse
 }
 
@@ -157,9 +157,9 @@ func WriteTokens(adminEmail, clientSecretFilePath string, tokens oauth2.Token, s
 	adminInfo["adminEmail"] = adminEmail
 	adminInfo["domain"] = strings.Split(adminEmail, "@")[1]
 	configFile, err := ioutil.ReadFile(clientSecretFilePath)
-	utils4go.Check(err)
+	utils4go.CatchException(err)
 	oauth2Config, err := google.ConfigFromJSON(configFile)
-	utils4go.Check(err)
+	utils4go.CatchException(err)
 	oauth2Client := GetOAuth2Client(
 		oauth2Config.ClientID,
 		oauth2Config.ClientSecret,
@@ -167,14 +167,14 @@ func WriteTokens(adminEmail, clientSecretFilePath string, tokens oauth2.Token, s
 		tokens.RefreshToken,
 		tokens.Expiry.String())
 	directoryService, err := admin.NewService(context.Background(), option.WithHTTPClient(oauth2Client))
-	utils4go.Check(err)
+	utils4go.CatchException(err)
 	user, err := directoryService.Users.Get(adminEmail).Do()
-	utils4go.Check(err)
+	utils4go.CatchException(err)
 	adminInfo["customer_id"] = user.CustomerId
 	FILEDATA["authenticated_user"] = adminInfo
 	projectId := utils4go.GetJsonValue(FILEDATA["installed"], "project_id").(string)
 	file, err := os.OpenFile(projectId+"_token.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	utils4go.Check(err)
+	utils4go.CatchException(err)
 	defer file.Close()
 	json.NewEncoder(file).Encode(FILEDATA)
 }

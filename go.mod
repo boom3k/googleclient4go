@@ -3,7 +3,7 @@ module github.com/boom3k/googleclient4go
 go 1.15
 
 require (
-	github.com/boom3k/utils4go v0.0.0-20200903045447-7c7fcf23db96
+	github.com/boom3k/utils4go v0.0.0-20200917050847-3baee31080bb
 	golang.org/x/net v0.0.0-20200904194848-62affa334b73 // indirect
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
 	golang.org/x/sys v0.0.0-20200908134130-d2e65c121b96 // indirect
