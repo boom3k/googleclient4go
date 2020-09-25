@@ -56,8 +56,8 @@ var defaultServiceAccountScopes = []string{"https://www.googleapis.com/auth/driv
 
 //ServiceAccount------------------------------------------------------------------------------------------------------_/
 
-func InitJWTConfig(email, privateKey, privateKeyID string, scopes []string) *jwt.Config {
-	return &jwt.Config{Email: email,
+func InitJWTConfig(serviceAccountEmail, privateKey, privateKeyID string, scopes []string) *jwt.Config {
+	return &jwt.Config{Email: serviceAccountEmail,
 		PrivateKey:    []uint8(privateKey)[:],
 		PrivateKeyID:  privateKeyID,
 		Scopes:        scopes,
@@ -199,7 +199,8 @@ func WriteClientSecretTokensFile(adminEmail string, scopes []string, oauth2 *oau
 	adminInfo["customer_id"] = user.CustomerId
 	FILEDATA["authenticated_user"] = adminInfo
 	projectId := utils4go.GetJsonValue(FILEDATA["installed"], "project_id").(string)
-	file, err := os.OpenFile(projectId+"_token.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	userName := strings.Split(adminEmail, "@")[0]
+	file, err := os.OpenFile(userName+"_"+projectId+".json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		panic(err)
 		log.Fatal(err)
