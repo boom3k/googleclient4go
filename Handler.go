@@ -65,17 +65,19 @@ func SetJWTConfig(serviceAccountEmail, privateKey, privateKeyID string, scopes [
 		UseIDToken:    false}
 }
 
-func SetJWTConfigUsingFile(serviceAccountKeyPath string, scopes []string) *jwt.Config {
+func SetJWTConfigUsingFile(serviceAccountKeyPath string, scopes []string) (*jwt.Config, error) {
 	file, err := ioutil.ReadFile(serviceAccountKeyPath)
 	if err != nil {
 		panic(err)
+		return nil, err
 	}
 	jwtConfig, err := google.JWTConfigFromJSON(file)
 	if err != nil {
 		panic(err)
+		return nil, err
 	}
 	jwtConfig.Scopes = scopes
-	return jwtConfig
+	return jwtConfig, nil
 }
 
 func GetServiceAccountHttpClient(jwt *jwt.Config, subjectEmail string) *http.Client {
@@ -96,16 +98,20 @@ func SetOAuth2Config(clientID, clientSecret string) *oauth2.Config {
 	}
 }
 
-func SetOAuth2ConfigUsingFile(filepath string) *oauth2.Config {
+func SetOAuth2ConfigUsingFile(filepath string) (*oauth2.Config, error) {
 	fileData, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		panic(err)
+		return nil, err
+
 	}
 	config, _ := google.ConfigFromJSON(fileData)
 	if err != nil {
 		panic(err)
+		return nil, err
+
 	}
-	return config
+	return config, nil
 }
 
 func GetOAuth2TokensFromWeb(oauth2Config *oauth2.Config, scopes []string) *oauth2.Token {
@@ -126,10 +132,6 @@ func GetOAuth2TokensFromWeb(oauth2Config *oauth2.Config, scopes []string) *oauth
 
 func GetOauth2HttpClient(clientId, clientSecret, accessToken, refreshToken string, expiry time.Time) *http.Client {
 	config := SetOAuth2Config(clientId, clientSecret)
-	/*time, err := time.Parse(timeFormat, expiry)
-	if err != nil {
-		panic(err)
-	}*/
 	token := &oauth2.Token{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
