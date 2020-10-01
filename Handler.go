@@ -142,8 +142,8 @@ func GetHttpClientFromCustomToken(filepath string) (*http.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	clientId := utils4go.GetJsonValue(fileAsJSON["installed"], "client_id").(string)
-	clientSecret := utils4go.GetJsonValue(fileAsJSON["installed"], "client_secret").(string)
+	clientId := utils4go.GetJsonValue(fileAsJSON["installed"], "ClientID").(string)
+	clientSecret := utils4go.GetJsonValue(fileAsJSON["installed"], "ClientSecret").(string)
 	accesstoken := utils4go.GetJsonValue(fileAsJSON["oauth2"], "access_token").(string)
 	refreshToken := utils4go.GetJsonValue(fileAsJSON["oauth2"], "refresh_token").(string)
 	expiry := utils4go.GetJsonValue(fileAsJSON["oauth2"], "expiry").(time.Time)
