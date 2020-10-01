@@ -150,7 +150,7 @@ func GetHttpClientFromCustomToken(filepath string) *http.Client {
 }
 
 //Tokens File----------------------------------------------------------------------------------------------------------/
-func WriteClientSecretTokensFile(adminEmail string, scopes []string, oauth2 *oauth2.Config, tokens *oauth2.Token) {
+func WriteClientSecretTokensFile(adminEmail, fileName string, scopes []string, oauth2 *oauth2.Config, tokens *oauth2.Token) {
 	FILEDATA := make(map[string]interface{})
 	FILEDATA["installed"] = oauth2
 	FILEDATA["oauth2_tokens"] = tokens
@@ -159,12 +159,12 @@ func WriteClientSecretTokensFile(adminEmail string, scopes []string, oauth2 *oau
 	}
 	adminInfo := make(map[string]interface{})
 	adminInfo["adminEmail"] = adminEmail
-	userName := strings.Split(adminEmail, "@")[0]
 	domain := strings.Split(adminEmail, "@")[1]
 	adminInfo["domain"] = domain
 	FILEDATA["authenticated_user"] = adminInfo
-	fileName := userName + "_" + strings.ReplaceAll(domain, ".", "_") + ".json"
-	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+	//userName := strings.Split(adminEmail, "@")[0]
+	//fileName = userName + "_" + strings.ReplaceAll(domain, ".", "_")
+	file, err := os.OpenFile(fileName+".json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	if err != nil {
 		panic(err)
 		log.Fatal(err)
