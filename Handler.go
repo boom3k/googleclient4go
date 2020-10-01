@@ -68,12 +68,12 @@ func SetJWTConfig(serviceAccountEmail, privateKey, privateKeyID string, scopes [
 func SetJWTConfigUsingFile(serviceAccountKeyPath string, scopes []string) (*jwt.Config, error) {
 	file, err := ioutil.ReadFile(serviceAccountKeyPath)
 	if err != nil {
-		panic(err)
+
 		return nil, err
 	}
 	jwtConfig, err := google.JWTConfigFromJSON(file)
 	if err != nil {
-		panic(err)
+
 		return nil, err
 	}
 	jwtConfig.Scopes = scopes
@@ -101,15 +101,11 @@ func SetOAuth2Config(clientID, clientSecret string) *oauth2.Config {
 func SetOAuth2ConfigUsingFile(filepath string) (*oauth2.Config, error) {
 	fileData, err := ioutil.ReadFile(filepath)
 	if err != nil {
-		panic(err)
 		return nil, err
-
 	}
 	config, _ := google.ConfigFromJSON(fileData)
 	if err != nil {
-		panic(err)
 		return nil, err
-
 	}
 	return config, nil
 }
@@ -144,7 +140,6 @@ func GetOauth2HttpClient(clientId, clientSecret, accessToken, refreshToken strin
 func GetHttpClientFromCustomToken(filepath string) (*http.Client, error) {
 	fileAsJSON, err := utils4go.ParseJSONFileToMap(filepath)
 	if err != nil {
-		panic(err)
 		return nil, err
 	}
 	clientId := utils4go.GetJsonValue(fileAsJSON["installed"], "client_id").(string)
@@ -156,7 +151,7 @@ func GetHttpClientFromCustomToken(filepath string) (*http.Client, error) {
 }
 
 //Tokens File----------------------------------------------------------------------------------------------------------/
-func WriteClientSecretTokensFile(adminEmail, fileName string, scopes []string, oauth2 *oauth2.Config, tokens *oauth2.Token) {
+func WriteClientSecretTokensFile(adminEmail, fileName string, scopes []string, oauth2 *oauth2.Config, tokens *oauth2.Token) error {
 	FILEDATA := make(map[string]interface{})
 	FILEDATA["installed"] = oauth2
 	FILEDATA["oauth2_tokens"] = tokens
@@ -172,9 +167,8 @@ func WriteClientSecretTokensFile(adminEmail, fileName string, scopes []string, o
 	//fileName = userName + "_" + strings.ReplaceAll(domain, ".", "_")
 	file, err := os.OpenFile(fileName+".json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	if err != nil {
-		panic(err)
-		log.Fatal(err)
+		return err
 	}
 	defer file.Close()
-	json.NewEncoder(file).Encode(FILEDATA)
+	return json.NewEncoder(file).Encode(FILEDATA)
 }
