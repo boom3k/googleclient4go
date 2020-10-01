@@ -154,13 +154,17 @@ func WriteClientSecretTokensFile(adminEmail string, scopes []string, oauth2 *oau
 	FILEDATA := make(map[string]interface{})
 	FILEDATA["installed"] = oauth2
 	FILEDATA["oauth2_tokens"] = tokens
+	if scopes != nil {
+		FILEDATA["serviceaccountscopes"] = scopes
+	}
 	adminInfo := make(map[string]interface{})
 	adminInfo["adminEmail"] = adminEmail
 	userName := strings.Split(adminEmail, "@")[0]
 	domain := strings.Split(adminEmail, "@")[1]
 	adminInfo["domain"] = domain
 	FILEDATA["authenticated_user"] = adminInfo
-	file, err := os.OpenFile(userName+"_"+strings.ReplaceAll(domain, ".", "_")+".json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+	fileName := userName + "_" + strings.ReplaceAll(domain, ".", "_") + ".json"
+	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	if err != nil {
 		panic(err)
 		log.Fatal(err)
