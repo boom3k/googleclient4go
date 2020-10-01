@@ -1,4 +1,5 @@
-package googleclient4go
+//package googleclient4go
+package main
 
 import (
 	"bufio"
@@ -19,6 +20,7 @@ import (
 )
 
 func main() {
+	GetHttpClientFromCustomToken("DLTT.json")
 }
 
 var timeFormat = "2006-01-02T15:04:05Z07:00"
@@ -133,6 +135,7 @@ func GetOauth2HttpClient(clientId, clientSecret, accessToken, refreshToken strin
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
 		Expiry:       expiry}
+
 	return config.Client(context.Background(), token)
 }
 
@@ -145,8 +148,11 @@ func GetHttpClientFromCustomToken(filepath string) (*http.Client, error) {
 	clientSecret := utils4go.GetJsonValue(fileAsJSON["installed"], "ClientSecret").(string)
 	accesstoken := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "access_token").(string)
 	refreshToken := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "refresh_token").(string)
-	expiry := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "expiry")
-	return GetOauth2HttpClient(clientId, clientSecret, accesstoken, refreshToken, expiry.(time.Time)), nil
+	expiry, err := time.Parse(timeFormat, utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "expiry").(string))
+	if err != nil {
+		panic(err)
+	}
+	return GetOauth2HttpClient(clientId, clientSecret, accesstoken, refreshToken, expiry), nil
 }
 
 //Tokens File----------------------------------------------------------------------------------------------------------/
