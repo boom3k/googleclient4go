@@ -156,10 +156,10 @@ func WriteClientSecretTokensFile(adminEmail string, scopes []string, oauth2 *oau
 	FILEDATA["oauth2_tokens"] = tokens
 	adminInfo := make(map[string]interface{})
 	adminInfo["adminEmail"] = adminEmail
+	userName := strings.Split(adminEmail, "@")[0]
 	domain := strings.Split(adminEmail, "@")[1]
 	adminInfo["domain"] = domain
 	FILEDATA["authenticated_user"] = adminInfo
-	userName := strings.Split(adminEmail, "@")[0]
 	file, err := os.OpenFile(userName+"_"+strings.ReplaceAll(domain, ".", "_")+".json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	if err != nil {
 		panic(err)
