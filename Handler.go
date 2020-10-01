@@ -126,12 +126,13 @@ func GetOAuth2TokensFromWeb(oauth2Config *oauth2.Config, scopes []string) *oauth
 	return cliResponse
 }
 
-func GetOauth2HttpClient(clientId, clientSecret, accessToken, refreshToken string) *http.Client {
+func GetOauth2HttpClient(clientId, clientSecret, accessToken, refreshToken string, expiry time.Time) *http.Client {
 	config := SetOAuth2Config(clientId, clientSecret)
 	token := &oauth2.Token{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		TokenType:    "Bearer"}
+		TokenType:    "Bearer",
+		Expiry:       expiry}
 	return config.Client(context.Background(), token)
 }
 
@@ -144,11 +145,12 @@ func GetHttpClientFromCustomToken(filepath string) (*http.Client, error) {
 	clientSecret := utils4go.GetJsonValue(fileAsJSON["installed"], "ClientSecret").(string)
 	accesstoken := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "access_token").(string)
 	refreshToken := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "refresh_token").(string)
-	return GetOauth2HttpClient(clientId, clientSecret, accesstoken, refreshToken), nil
+	expiry := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "expiry")
+	return GetOauth2HttpClient(clientId, clientSecret, accesstoken, refreshToken, expiry.(time.Time)), nil
 }
 
 //Tokens File----------------------------------------------------------------------------------------------------------/
-func WriteClientSecretTokensFile(adminEmail, fileName string, scopes []string, oauth2 *oauth2.Config, tokens *oauth2.Token) error {
+func WriteClientSecretTokensFile(userEmail, fileName string, scopes []string, oauth2 *oauth2.Config, tokens *oauth2.Token) error {
 	FILEDATA := make(map[string]interface{})
 	FILEDATA["installed"] = oauth2
 	FILEDATA["oauth2_tokens"] = tokens
@@ -156,11 +158,11 @@ func WriteClientSecretTokensFile(adminEmail, fileName string, scopes []string, o
 		FILEDATA["serviceaccountscopes"] = scopes
 	}
 	adminInfo := make(map[string]interface{})
-	adminInfo["adminEmail"] = adminEmail
-	domain := strings.Split(adminEmail, "@")[1]
+	adminInfo["userEmail"] = userEmail
+	domain := strings.Split(userEmail, "@")[1]
 	adminInfo["domain"] = domain
 	FILEDATA["authenticated_user"] = adminInfo
-	//userName := strings.Split(adminEmail, "@")[0]
+	//userName := strings.Split(userEmail, "@")[0]
 	//fileName = userName + "_" + strings.ReplaceAll(domain, ".", "_")
 	file, err := os.OpenFile(fileName+".json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	if err != nil {
