@@ -175,3 +175,14 @@ func WriteClientSecretTokensFile(userEmail, fileName string, scopes []string, oa
 	defer file.Close()
 	return json.NewEncoder(file).Encode(FILEDATA)
 }
+
+//Setup Stuff----------------------------------------------------------------------------------------------------------/
+func BeginOauth2Flow(clientID, clientSecret, tokenFileName string, scopes []string) {
+	userName := utils4go.Readline("Enter your userEmail: ")
+	/*Set oauth2Config using ClientID and ClientSecret*/
+	oauth2Config := SetOAuth2Config(clientID, clientSecret)
+	/*Get tokens from web using OAuth2*/
+	tokens := GetOAuth2TokensFromWeb(oauth2Config, scopes)
+	/*Write token file*/
+	WriteClientSecretTokensFile(userName, tokenFileName, scopes, oauth2Config, tokens)
+}
