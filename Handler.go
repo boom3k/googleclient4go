@@ -208,3 +208,10 @@ func GetAllOauth2Scopes() []string {
 func GetAllServiceAccountScopes() []string {
 	return serviceAccountScopes
 }
+
+func GetAllScopes() []string {
+	var allScopes []string
+	allScopes = append(allScopes, adminScopes...)
+	allScopes = append(allScopes, serviceAccountScopes...)
+	return allScopes
+}
