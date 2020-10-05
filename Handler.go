@@ -22,7 +22,8 @@ func main() {
 }
 
 var timeFormat = "2006-01-02T15:04:05Z07:00"
-var allAdminScopes = []string{"https://www.googleapis.com/auth/admin.reports.audit.readonly",
+var adminScopes = []string{
+	"https://www.googleapis.com/auth/admin.reports.audit.readonly",
 	"https://www.googleapis.com/auth/admin.reports.usage.readonly",
 	"https://www.googleapis.com/auth/admin.directory.user",
 	"https://www.googleapis.com/auth/admin.directory.group.member",
@@ -39,7 +40,8 @@ var allAdminScopes = []string{"https://www.googleapis.com/auth/admin.reports.aud
 	"https://www.googleapis.com/auth/cloud_search",
 	"https://www.googleapis.com/auth/apps.licensing",
 	"https://www.googleapis.com/auth/admin.directory.device.mobile"}
-var allServiceAccountScopes = []string{"https://www.googleapis.com/auth/drive",
+var serviceAccountScopes = []string{
+	"https://www.googleapis.com/auth/drive",
 	"https://mail.google.com/",
 	"https://sites.google.com/feeds",
 	"https://www.google.com/m8/feeds",
@@ -154,20 +156,18 @@ func GetHttpClientFromCustomToken(filepath string) (*http.Client, error) {
 }
 
 //Tokens File----------------------------------------------------------------------------------------------------------/
-func WriteClientSecretTokensFile(userEmail, fileName string, scopes []string, oauth2 *oauth2.Config, tokens *oauth2.Token) error {
+func WriteClientSecretTokensFile(userEmail, fileName string, addServiceAccountScopes bool, oauth2 *oauth2.Config, tokens *oauth2.Token) error {
 	FILEDATA := make(map[string]interface{})
 	FILEDATA["installed"] = oauth2
 	FILEDATA["oauth2_tokens"] = tokens
-	if scopes != nil {
-		FILEDATA["serviceaccountscopes"] = scopes
+	if addServiceAccountScopes == true {
+		FILEDATA["serviceaccountscopes"] = serviceAccountScopes
 	}
 	adminInfo := make(map[string]interface{})
 	adminInfo["userEmail"] = userEmail
 	domain := strings.Split(userEmail, "@")[1]
 	adminInfo["domain"] = domain
 	FILEDATA["authenticated_user"] = adminInfo
-	//userName := strings.Split(userEmail, "@")[0]
-	//fileName = userName + "_" + strings.ReplaceAll(domain, ".", "_")
 	file, err := os.OpenFile(fileName+".json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	if err != nil {
 		return err
@@ -177,17 +177,17 @@ func WriteClientSecretTokensFile(userEmail, fileName string, scopes []string, oa
 }
 
 //Setup Stuff----------------------------------------------------------------------------------------------------------/
-func SimpleTokenGenerator(clientID, clientSecret, tokenFileName string, scopes []string) {
+func SimpleTokenGenerator(clientID, clientSecret, tokenFileName string, oauth2Scopes []string, addServiceAccountScopes bool) {
 	userName := utils4go.Readline("Enter your userEmail: ")
 	/*Set oauth2Config using ClientID and ClientSecret*/
 	oauth2Config := SetOAuth2Config(clientID, clientSecret)
 	/*Get tokens from web using OAuth2*/
-	tokens := GetOAuth2TokensFromWeb(oauth2Config, scopes)
+	tokens := GetOAuth2TokensFromWeb(oauth2Config, oauth2Scopes)
 	/*Write token file*/
-	WriteClientSecretTokensFile(userName, tokenFileName, scopes, oauth2Config, tokens)
+	WriteClientSecretTokensFile(userName, tokenFileName, addServiceAccountScopes, oauth2Config, tokens)
 }
 
-func SimpleTokenGeneratorUsingFile(Oauth2FilePath, newTokenFileName string, scopes []string) {
+func SimpleTokenGeneratorUsingFile(Oauth2FilePath, newTokenFileName string, oauth2Scopes []string, addServiceAccountScopes bool) {
 	userName := utils4go.Readline("Enter your userEmail: ")
 	/*Set oauth2Config using ClientID and ClientSecret*/
 	oauth2Config, err := SetOAuth2ConfigUsingFile(Oauth2FilePath)
@@ -196,14 +196,15 @@ func SimpleTokenGeneratorUsingFile(Oauth2FilePath, newTokenFileName string, scop
 		panic(err)
 	}
 	/*Get tokens from web using OAuth2*/
-	tokens := GetOAuth2TokensFromWeb(oauth2Config, scopes)
+	tokens := GetOAuth2TokensFromWeb(oauth2Config, oauth2Scopes)
 	/*Write token file*/
-	WriteClientSecretTokensFile(userName, newTokenFileName, scopes, oauth2Config, tokens)
+	WriteClientSecretTokensFile(userName, newTokenFileName, addServiceAccountScopes, oauth2Config, tokens)
 }
 
 func GetAllOauth2Scopes() []string {
-	return allAdminScopes
+	return adminScopes
 }
+
 func GetAllServiceAccountScopes() []string {
-	return allServiceAccountScopes
+	return serviceAccountScopes
 }
