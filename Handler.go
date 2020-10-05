@@ -22,7 +22,7 @@ func main() {
 }
 
 var timeFormat = "2006-01-02T15:04:05Z07:00"
-var defaultOAuth2Scopes = []string{"https://www.googleapis.com/auth/admin.reports.audit.readonly",
+var allAdminScopes = []string{"https://www.googleapis.com/auth/admin.reports.audit.readonly",
 	"https://www.googleapis.com/auth/admin.reports.usage.readonly",
 	"https://www.googleapis.com/auth/admin.directory.user",
 	"https://www.googleapis.com/auth/admin.directory.group.member",
@@ -39,7 +39,7 @@ var defaultOAuth2Scopes = []string{"https://www.googleapis.com/auth/admin.report
 	"https://www.googleapis.com/auth/cloud_search",
 	"https://www.googleapis.com/auth/apps.licensing",
 	"https://www.googleapis.com/auth/admin.directory.device.mobile"}
-var defaultServiceAccountScopes = []string{"https://www.googleapis.com/auth/drive",
+var allServiceAccountScopes = []string{"https://www.googleapis.com/auth/drive",
 	"https://mail.google.com/",
 	"https://sites.google.com/feeds",
 	"https://www.google.com/m8/feeds",
@@ -177,7 +177,7 @@ func WriteClientSecretTokensFile(userEmail, fileName string, scopes []string, oa
 }
 
 //Setup Stuff----------------------------------------------------------------------------------------------------------/
-func BeginOauth2Flow(clientID, clientSecret, tokenFileName string, scopes []string) {
+func SimpleTokenGenerator(clientID, clientSecret, tokenFileName string, scopes []string) {
 	userName := utils4go.Readline("Enter your userEmail: ")
 	/*Set oauth2Config using ClientID and ClientSecret*/
 	oauth2Config := SetOAuth2Config(clientID, clientSecret)
@@ -185,4 +185,25 @@ func BeginOauth2Flow(clientID, clientSecret, tokenFileName string, scopes []stri
 	tokens := GetOAuth2TokensFromWeb(oauth2Config, scopes)
 	/*Write token file*/
 	WriteClientSecretTokensFile(userName, tokenFileName, scopes, oauth2Config, tokens)
+}
+
+func SimpleTokenGeneratorUsingFile(Oauth2FilePath, newTokenFileName string, scopes []string) {
+	userName := utils4go.Readline("Enter your userEmail: ")
+	/*Set oauth2Config using ClientID and ClientSecret*/
+	oauth2Config, err := SetOAuth2ConfigUsingFile(Oauth2FilePath)
+	if err != nil {
+		log.Println(err.Error())
+		panic(err)
+	}
+	/*Get tokens from web using OAuth2*/
+	tokens := GetOAuth2TokensFromWeb(oauth2Config, scopes)
+	/*Write token file*/
+	WriteClientSecretTokensFile(userName, newTokenFileName, scopes, oauth2Config, tokens)
+}
+
+func GetAllOauth2Scopes() []string {
+	return allAdminScopes
+}
+func GetAllServiceAccountScopes() []string {
+	return allServiceAccountScopes
 }
