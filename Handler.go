@@ -84,6 +84,7 @@ func SetJWTConfigUsingFile(serviceAccountKeyPath string, scopes []string) (*jwt.
 
 func GetServiceAccountHttpClient(jwt *jwt.Config, subjectEmail string) *http.Client {
 	jwt.Subject = subjectEmail
+	log.Println("ServiceAccount [" + jwt.Email + "] is acting as --> [" + subjectEmail + "]")
 	return jwt.Client(context.Background())
 }
 
@@ -135,7 +136,6 @@ func GetOauth2HttpClient(clientId, clientSecret, accessToken, refreshToken strin
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
 		Expiry:       expiry}
-
 	return config.Client(context.Background(), token)
 }
 
