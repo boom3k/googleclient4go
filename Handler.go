@@ -22,7 +22,7 @@ func main() {
 }
 
 var timeFormat = "2006-01-02T15:04:05Z07:00"
-var adminScopes = []string{
+var AdminScopes = []string{
 	"https://www.googleapis.com/auth/admin.reports.audit.readonly",
 	"https://www.googleapis.com/auth/admin.reports.usage.readonly",
 	"https://www.googleapis.com/auth/admin.directory.user",
@@ -37,10 +37,11 @@ var adminScopes = []string{
 	"https://www.googleapis.com/auth/apps.groups.settings",
 	"https://www.googleapis.com/auth/admin.datatransfer",
 	"https://www.googleapis.com/auth/cloud-platform",
+	"https://www.googleapis.com/auth/cloudplatformprojects",
 	"https://www.googleapis.com/auth/cloud_search",
 	"https://www.googleapis.com/auth/apps.licensing",
 	"https://www.googleapis.com/auth/admin.directory.device.mobile"}
-var serviceAccountScopes = []string{
+var ServiceAccountScopes = []string{
 	"https://www.googleapis.com/auth/drive",
 	"https://mail.google.com/",
 	"https://sites.google.com/feeds",
@@ -70,12 +71,10 @@ func SetJWTConfig(serviceAccountEmail, privateKey, privateKeyID string, scopes [
 func SetJWTConfigUsingFile(serviceAccountKeyPath string, scopes []string) (*jwt.Config, error) {
 	file, err := ioutil.ReadFile(serviceAccountKeyPath)
 	if err != nil {
-
 		return nil, err
 	}
 	jwtConfig, err := google.JWTConfigFromJSON(file)
 	if err != nil {
-
 		return nil, err
 	}
 	jwtConfig.Scopes = scopes
@@ -161,7 +160,7 @@ func WriteClientSecretTokensFile(userEmail, fileName string, addServiceAccountSc
 	FILEDATA["installed"] = oauth2
 	FILEDATA["oauth2_tokens"] = tokens
 	if addServiceAccountScopes == true {
-		FILEDATA["serviceaccountscopes"] = serviceAccountScopes
+		FILEDATA["serviceaccountscopes"] = ServiceAccountScopes
 	}
 	adminInfo := make(map[string]interface{})
 	adminInfo["userEmail"] = userEmail
@@ -202,16 +201,16 @@ func SimpleTokenGeneratorUsingFile(Oauth2FilePath, newTokenFileName string, oaut
 }
 
 func GetAllOauth2Scopes() []string {
-	return adminScopes
+	return AdminScopes
 }
 
 func GetAllServiceAccountScopes() []string {
-	return serviceAccountScopes
+	return ServiceAccountScopes
 }
 
 func GetAllScopes() []string {
 	var allScopes []string
-	allScopes = append(allScopes, adminScopes...)
-	allScopes = append(allScopes, serviceAccountScopes...)
+	allScopes = append(allScopes, AdminScopes...)
+	allScopes = append(allScopes, ServiceAccountScopes...)
 	return allScopes
 }
