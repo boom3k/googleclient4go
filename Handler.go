@@ -56,7 +56,7 @@ var ServiceAccountScopes = []string{
 	"https://www.googleapis.com/auth/userinfo.profile"}
 
 //ServiceAccount-------------------------------------------------------------------------------------------------------/
-func SetJWTConfig(serviceAccountEmail, privateKey, privateKeyID string, scopes []string) *jwt.Config {
+func GetJWTConfigManually(serviceAccountEmail, privateKey, privateKeyID string, scopes []string) *jwt.Config {
 	return &jwt.Config{Email: serviceAccountEmail,
 		PrivateKey:    []uint8(privateKey)[:],
 		PrivateKeyID:  privateKeyID,
@@ -68,7 +68,7 @@ func SetJWTConfig(serviceAccountEmail, privateKey, privateKeyID string, scopes [
 		UseIDToken:    false}
 }
 
-func SetJWTConfigUsingFile(serviceAccountKeyPath string, scopes []string) (*jwt.Config, error) {
+func GetJWTConfigUsingKeyfile(serviceAccountKeyPath string, scopes []string) (*jwt.Config, error) {
 	file, err := ioutil.ReadFile(serviceAccountKeyPath)
 	if err != nil {
 		return nil, err
@@ -81,10 +81,24 @@ func SetJWTConfigUsingFile(serviceAccountKeyPath string, scopes []string) (*jwt.
 	return jwtConfig, nil
 }
 
-func GetServiceAccountHttpClient(jwt *jwt.Config, subjectEmail string) *http.Client {
+func GetHttpClientUsingJWT(jwt *jwt.Config, subjectEmail string) *http.Client {
 	jwt.Subject = subjectEmail
 	log.Println("ServiceAccount [" + jwt.Email + "] is acting as --> [" + subjectEmail + "]")
 	return jwt.Client(context.Background())
+}
+
+func GetHttpClient(subjectEmail, serviceAccountEmail, privateKey, privateKeyID string, scopes []string) *http.Client {
+	jwt := GetJWTConfigManually(serviceAccountEmail, privateKey, privateKeyID, scopes)
+	return GetHttpClientUsingJWT(jwt, subjectEmail)
+}
+
+func GetHttpClientUsingFile(subjectEmail, serviceAccountKeyPath string, scopes []string) *http.Client {
+	jwt, err := GetJWTConfigUsingKeyfile(serviceAccountKeyPath, scopes)
+	if err != nil {
+		log.Println(err.Error())
+		panic(err)
+	}
+	return GetHttpClientUsingJWT(jwt, subjectEmail)
 }
 
 //OAuth2---------------------------------------------------------------------------------------------------------------/
