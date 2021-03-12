@@ -18,9 +18,6 @@ import (
 	"golang.org/x/oauth2/jwt"
 )
 
-func main() {
-}
-
 var timeFormat = "2006-01-02T15:04:05Z07:00"
 var AdminScopes = []string{
 	"https://www.googleapis.com/auth/admin.reports.audit.readonly",
@@ -55,6 +52,9 @@ var GenericServiceAccountScopes = []string{
 	"https://www.googleapis.com/auth/gmail.settings.sharing",
 }
 
+func main() {
+}
+
 //ServiceAccount-------------------------------------------------------------------------------------------------------/
 /* Returns a type jwt.Config from content that would be found in a Google Cloud Service Account's key file*/
 func GetJWTConfigManually(serviceAccountEmail, privateKey, privateKeyID string, scopes []string) *jwt.Config {
@@ -84,26 +84,16 @@ func GetJWTConfigUsingKeyfile(serviceAccountKeyPath string, scopes []string) (*j
 }
 
 /* Returns a type Service Account http.Client from an jwt.Config*/
-func GetHttpClientUsingJWT(jwt *jwt.Config, subjectEmail string) *http.Client {
+func GetServiceAccountHttpClientUsingJWT(jwt *jwt.Config, subjectEmail string) *http.Client {
 	jwt.Subject = subjectEmail
 	log.Println("ServiceAccount [" + jwt.Email + "] is acting as --> [" + subjectEmail + "]")
 	return jwt.Client(context.Background())
 }
 
 /* Returns a type Service Account http.Client from content that would be found in a Google Cloud Service Account's key file*/
-func GetHttpClient(subjectEmail, serviceAccountEmail, privateKey, privateKeyID string, scopes []string) *http.Client {
+func GetServiceAccountHttpClient(subjectEmail, serviceAccountEmail, privateKey, privateKeyID string, scopes []string) *http.Client {
 	jwt := GetJWTConfigManually(serviceAccountEmail, privateKey, privateKeyID, scopes)
-	return GetHttpClientUsingJWT(jwt, subjectEmail)
-}
-
-/* Returns a type Service Account http.Client from from a Service Account's key file*/
-func GetHttpClientUsingFile(subjectEmail, serviceAccountKeyPath string, scopes []string) *http.Client {
-	jwt, err := GetJWTConfigUsingKeyfile(serviceAccountKeyPath, scopes)
-	if err != nil {
-		log.Println(err.Error())
-		panic(err)
-	}
-	return GetHttpClientUsingJWT(jwt, subjectEmail)
+	return GetServiceAccountHttpClientUsingJWT(jwt, subjectEmail)
 }
 
 //OAuth2---------------------------------------------------------------------------------------------------------------/
@@ -161,14 +151,20 @@ func GetOAuth2HttpClient(clientId, clientSecret, accessToken, refreshToken strin
 	return config.Client(context.Background(), token)
 }
 
+/* Returns a type http.Client from content found in a typical clientSecrets file*/
+func GetOAuth2ConfigFromClientSecretsFile(oAuth2FilePath string) (*oauth2.Config, error) {
+	oauthConfig, err := GetOAuth2ConfigFromFile(oAuth2FilePath)
+	return oauthConfig, err
+}
+
 /* Returns a type http.Client from a give clientSecrets filepath*/
-func GetHttpClientFromCustomToken(filepath string) (*http.Client, error) {
+func GetOauth2HttpClientFromAuthenticatedToken(filepath string) (*http.Client, error) {
 	fileAsJSON, err := utils4go.ParseJSONFileToMap(filepath)
 	if err != nil {
 		return nil, err
 	}
-	clientId := utils4go.GetJsonValue(fileAsJSON["installed"], "ClientID").(string)
-	clientSecret := utils4go.GetJsonValue(fileAsJSON["installed"], "ClientSecret").(string)
+	clientId := utils4go.GetJsonValue(fileAsJSON["installed"], "client_id").(string)
+	clientSecret := utils4go.GetJsonValue(fileAsJSON["installed"], "client_secret").(string)
 	accessToken := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "access_token").(string)
 	refreshToken := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "refresh_token").(string)
 	expiry, err := time.Parse(timeFormat, utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "expiry").(string))
@@ -206,7 +202,15 @@ func GenerateCustomOauth2TokenUsingFile(Oauth2FilePath, newTokenFileName string,
 //Tokens File----------------------------------------------------------------------------------------------------------/
 func CreateCustomClientSecretsFile(userEmail, fileName string, addServiceAccountScopes bool, oauth2 *oauth2.Config, tokens *oauth2.Token) (*os.File, error) {
 	FILEDATA := make(map[string]interface{})
-	FILEDATA["installed"] = oauth2
+	var installed = make(map[string]interface{})
+	installed["client_id"] = oauth2.ClientID
+	installed["auth_uri"] = oauth2.Endpoint.AuthURL
+	installed["token_uri"] = oauth2.Endpoint.TokenURL
+	installed["client_secret"] = oauth2.ClientSecret
+	redirectUris := []string{oauth2.RedirectURL, "http://localhost"}
+	installed["redirect_uris"] = redirectUris
+	FILEDATA["installed"] = installed
+	//FILEDATA["installed"] = oauth2
 	FILEDATA["oauth2_tokens"] = tokens
 	if addServiceAccountScopes == true {
 		FILEDATA["serviceaccountscopes"] = GenericServiceAccountScopes
