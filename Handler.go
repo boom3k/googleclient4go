@@ -41,19 +41,19 @@ var AdminScopes = []string{
 	"https://www.googleapis.com/auth/cloud_search",
 	"https://www.googleapis.com/auth/apps.licensing",
 	"https://www.googleapis.com/auth/admin.directory.device.mobile"}
-var ServiceAccountScopes = []string{
-	"https://www.googleapis.com/auth/drive",
+var GenericServiceAccountScopes = []string{
 	"https://mail.google.com/",
 	"https://sites.google.com/feeds",
 	"https://www.google.com/m8/feeds",
+	"https://www.googleapis.com/auth/drive",
 	"https://www.googleapis.com/auth/activity",
 	"https://www.googleapis.com/auth/calendar",
-	"https://www.googleapis.com/auth/cloud-platform",
 	"https://www.googleapis.com/auth/contacts",
+	"https://www.googleapis.com/auth/userinfo.email",
+	"https://www.googleapis.com/auth/userinfo.profile",
 	"https://www.googleapis.com/auth/gmail.settings.basic",
 	"https://www.googleapis.com/auth/gmail.settings.sharing",
-	"https://www.googleapis.com/auth/userinfo.email",
-	"https://www.googleapis.com/auth/userinfo.profile"}
+}
 
 //ServiceAccount-------------------------------------------------------------------------------------------------------/
 /* Returns a type jwt.Config from content that would be found in a Google Cloud Service Account's key file*/
@@ -169,27 +169,27 @@ func GetHttpClientFromCustomToken(filepath string) (*http.Client, error) {
 	}
 	clientId := utils4go.GetJsonValue(fileAsJSON["installed"], "ClientID").(string)
 	clientSecret := utils4go.GetJsonValue(fileAsJSON["installed"], "ClientSecret").(string)
-	accesstoken := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "access_token").(string)
+	accessToken := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "access_token").(string)
 	refreshToken := utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "refresh_token").(string)
 	expiry, err := time.Parse(timeFormat, utils4go.GetJsonValue(fileAsJSON["oauth2_tokens"], "expiry").(string))
 	if err != nil {
 		panic(err)
 	}
-	return GetOAuth2HttpClient(clientId, clientSecret, accesstoken, refreshToken, expiry), nil
+	return GetOAuth2HttpClient(clientId, clientSecret, accessToken, refreshToken, expiry), nil
 }
 
 //Setup Stuff----------------------------------------------------------------------------------------------------------/
-func GenerateCustomOAuth2Token(clientID, clientSecret, tokenFileName string, oauth2Scopes []string, addServiceAccountScopes bool) *os.File {
+func GenerateCustomOAuth2Token(clientID, clientSecret, tokenFileName string, oauth2Scopes []string, addServiceAccountScopes bool) (*os.File, error) {
 	userName := utils4go.Readline("Enter your userEmail: ")
 	/*Set oauth2Config using ClientID and ClientSecret*/
 	oauth2Config := GetOAuth2Config(clientID, clientSecret)
 	/*Get tokens from web using OAuth2*/
 	tokens := GetOAuth2TokensFromBrowser(oauth2Config, oauth2Scopes)
 	/*Write token file*/
-	return WriteClientSecretTokensFile(userName, tokenFileName, addServiceAccountScopes, oauth2Config, tokens)
+	return CreateCustomClientSecretsFile(userName, tokenFileName, addServiceAccountScopes, oauth2Config, tokens)
 }
 
-func GenerateCustomOauth2TokenUsingFile(Oauth2FilePath, newTokenFileName string, oauth2Scopes []string, addServiceAccountScopes bool) {
+func GenerateCustomOauth2TokenUsingFile(Oauth2FilePath, newTokenFileName string, oauth2Scopes []string, addServiceAccountScopes bool) (*os.File, error) {
 	userName := utils4go.Readline("Enter your userEmail: ")
 	/*Set oauth2Config using ClientID and ClientSecret*/
 	oauth2Config, err := GetOAuth2ConfigFromFile(Oauth2FilePath)
@@ -200,16 +200,16 @@ func GenerateCustomOauth2TokenUsingFile(Oauth2FilePath, newTokenFileName string,
 	/*Get tokens from web using OAuth2*/
 	tokens := GetOAuth2TokensFromBrowser(oauth2Config, oauth2Scopes)
 	/*Write token file*/
-	WriteClientSecretTokensFile(userName, newTokenFileName, addServiceAccountScopes, oauth2Config, tokens)
+	return CreateCustomClientSecretsFile(userName, newTokenFileName, addServiceAccountScopes, oauth2Config, tokens)
 }
 
 //Tokens File----------------------------------------------------------------------------------------------------------/
-func WriteClientSecretTokensFile(userEmail, fileName string, addServiceAccountScopes bool, oauth2 *oauth2.Config, tokens *oauth2.Token) *os.File {
+func CreateCustomClientSecretsFile(userEmail, fileName string, addServiceAccountScopes bool, oauth2 *oauth2.Config, tokens *oauth2.Token) (*os.File, error) {
 	FILEDATA := make(map[string]interface{})
 	FILEDATA["installed"] = oauth2
 	FILEDATA["oauth2_tokens"] = tokens
 	if addServiceAccountScopes == true {
-		FILEDATA["serviceaccountscopes"] = ServiceAccountScopes
+		FILEDATA["serviceaccountscopes"] = GenericServiceAccountScopes
 	}
 	adminInfo := make(map[string]interface{})
 	adminInfo["userEmail"] = userEmail
@@ -218,10 +218,9 @@ func WriteClientSecretTokensFile(userEmail, fileName string, addServiceAccountSc
 	FILEDATA["authenticated_user"] = adminInfo
 	file, err := os.OpenFile(fileName+".json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	if err != nil {
-		log.Println(err.Error())
-		panic(err)
+		return file, err
 	}
 	defer file.Close()
 	json.NewEncoder(file).Encode(FILEDATA)
-	return file
+	return file, err
 }
