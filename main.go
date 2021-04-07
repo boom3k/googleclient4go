@@ -116,7 +116,11 @@ func GetOAuth2ConfigFromFile(clientSecretsFilePath string) (*oauth2.Config, erro
 	if err != nil {
 		return nil, err
 	}
-	config, _ := google.ConfigFromJSON(fileData)
+	return GetOauth2ConfigFromBytes(fileData)
+}
+
+func GetOauth2ConfigFromBytes(data []byte) (*oauth2.Config, error) {
+	config, err := google.ConfigFromJSON(data)
 	if err != nil {
 		return nil, err
 	}
