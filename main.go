@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/boom3k/utils4go"
-
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
@@ -53,6 +52,8 @@ var GenericServiceAccountScopes = []string{
 }
 
 func main() {
+	byte := []byte{}
+	utils4go.ParseJsonFileBytesToMap(byte)
 }
 
 //ServiceAccount-------------------------------------------------------------------------------------------------------/
