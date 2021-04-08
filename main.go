@@ -189,13 +189,13 @@ func GenerateCustomOAuth2Token(clientID, clientSecret, tokenFileName string, oau
 	return CreateCustomClientSecretsFile(userName, tokenFileName, addServiceAccountScopes, oauth2Config, tokens)
 }
 
-func GenerateEncryptedCustomOAuth2TokenFile(clientSecretFileData []byte, tokenFileName string, scopes []string, addServiceAccountScopes, overwriteExistingFile bool) (string, error) {
+func GenerateEncryptedCustomOAuth2TokenFile(clientSecretFileData []byte, tokenName string, scopes []string, addServiceAccountScopes, overwriteExistingFile bool) (string, error) {
 	config, err := GetOauth2ConfigFromBytes(clientSecretFileData)
 	if err != nil {
 		log.Println(err.Error())
 		panic(err)
 	}
-	tokenFile, err := GenerateCustomOAuth2Token(config.ClientID, config.ClientSecret, tokenFileName, scopes, addServiceAccountScopes)
+	tokenFile, err := GenerateCustomOAuth2Token(config.ClientID, config.ClientSecret, tokenName, scopes, addServiceAccountScopes)
 	if err != nil {
 		log.Println(err.Error())
 		panic(err)
