@@ -161,7 +161,12 @@ func GetOAuth2HttpClientFromEncryptedFile(filepath, sixteenCharKey string) *http
 	config, _ := google.ConfigFromJSON(tokenFileData)
 	tokenDataMap := utils4go.ParseJsonFileBytesToMap(tokenFileData)
 	oauth2Tokens := tokenDataMap["oauth2_tokens"].(map[string]interface{})
-	return GetOAuth2HttpClient(config.ClientID, config.ClientSecret, oauth2Tokens["access_token"].(string), oauth2Tokens["refresh_token"].(string), oauth2Tokens["expiry"].(time.Time))
+	expiry, err := time.Parse(timeFormat, oauth2Tokens["expiry"].(string))
+	if err != nil {
+		log.Println(err.Error())
+		panic(err)
+	}
+	return GetOAuth2HttpClient(config.ClientID, config.ClientSecret, oauth2Tokens["access_token"].(string), oauth2Tokens["refresh_token"].(string), expiry)
 }
 
 /* Returns a type http.Client from content found in a typical clientSecrets file*/
@@ -197,7 +202,6 @@ func GenerateCustomOAuth2Token(clientID, clientSecret, tokenFileName string, oau
 	/*Write token file*/
 	return CreateCustomClientSecretsFile(userName, tokenFileName, addServiceAccountScopes, oauth2Config, tokens)
 }
-
 func GenerateEncryptedCustomOAuth2TokenFile(clientSecretFileData []byte, tokenName string, scopes []string, addServiceAccountScopes, overwriteExistingFile bool) (string, error) {
 	config, err := GetOauth2ConfigFromBytes(clientSecretFileData)
 	if err != nil {
