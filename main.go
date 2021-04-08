@@ -6,16 +6,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/boom3k/utils4go"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"golang.org/x/oauth2/jwt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-	"golang.org/x/oauth2/jwt"
 )
 
 var timeFormat = "2006-01-02T15:04:05Z07:00"
