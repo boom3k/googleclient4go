@@ -1,10 +1,11 @@
-module github.com/boom3k/googleclient4go
+module googleclient4go
 
-go 1.15
+go 1.16
 
 require (
-	cloud.google.com/go v0.67.0 // indirect
-	github.com/boom3k/utils4go v0.0.0-20201001032435-72065b2a04a9
-	golang.org/x/net v0.0.0-20200930145003-4acb6c075d10 // indirect
-	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
+	cloud.google.com/go v0.81.0 // indirect
+	github.com/boom3k/utils4go v0.0.0-20210408034416-26c8933e9de9
+	github.com/golang/protobuf v1.5.2 // indirect
+	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
+	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
 )

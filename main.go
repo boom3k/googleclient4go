@@ -189,6 +189,19 @@ func GenerateCustomOAuth2Token(clientID, clientSecret, tokenFileName string, oau
 	return CreateCustomClientSecretsFile(userName, tokenFileName, addServiceAccountScopes, oauth2Config, tokens)
 }
 
+func GenerateEncryptedCustomOAuth2TokenFile(clientSecretFileData []byte, scopes []string, addServiceAccountScopes, overwriteExistingFile bool) (string, error) {
+	config, err := GetOauth2ConfigFromBytes(clientSecretFileData)
+	if err != nil {
+		log.Println(err.Error())
+		panic(err)
+	}
+	tokenFile, err := GenerateCustomOAuth2Token(config.ClientID, config.ClientSecret, "informatica_token", scopes, addServiceAccountScopes)
+	if err != nil {
+		log.Println(err.Error())
+		panic(err)
+	}
+	return utils4go.EncryptFile(tokenFile.Name(), utils4go.Readline("Enter a password for the tokenFile: (Mininum: 16 characters)"), overwriteExistingFile)
+}
 func GenerateCustomOauth2TokenUsingFile(Oauth2FilePath, newTokenFileName string, oauth2Scopes []string, addServiceAccountScopes bool) (*os.File, error) {
 	userName := utils4go.Readline("Enter your userEmail: ")
 	/*Set oauth2Config using ClientID and ClientSecret*/
