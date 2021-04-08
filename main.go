@@ -156,6 +156,14 @@ func GetOAuth2HttpClient(clientId, clientSecret, accessToken, refreshToken strin
 	return config.Client(context.Background(), token)
 }
 
+func GetOAuth2HttpClientFromEncryptedFile(filepath, sixteenCharKey string) *http.Client {
+	tokenFileData, _ := utils4go.DecryptFile(filepath, sixteenCharKey)
+	config, _ := google.ConfigFromJSON(tokenFileData)
+	tokenDataMap := utils4go.ParseJsonFileBytesToMap(tokenFileData)
+	oauth2Tokens := tokenDataMap["oauth2_tokens"].(map[string]interface{})
+	return GetOAuth2HttpClient(config.ClientID, config.ClientSecret, oauth2Tokens["access_token"].(string), oauth2Tokens["refresh_token"].(string), oauth2Tokens["expiry"].(time.Time))
+}
+
 /* Returns a type http.Client from content found in a typical clientSecrets file*/
 func GetOAuth2ConfigFromClientSecretsFile(oAuth2FilePath string) (*oauth2.Config, error) {
 	oauthConfig, err := GetOAuth2ConfigFromFile(oAuth2FilePath)
