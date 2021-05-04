@@ -52,8 +52,6 @@ var GenericServiceAccountScopes = []string{
 }
 
 func main() {
-	byte := []byte{}
-	utils4go.ParseJsonFileBytesToMap(byte)
 }
 
 //ServiceAccount-------------------------------------------------------------------------------------------------------/
@@ -257,4 +255,12 @@ func CreateCustomClientSecretsFile(userEmail, fileName string, addServiceAccount
 	defer file.Close()
 	json.NewEncoder(file).Encode(FILEDATA)
 	return file, err
+}
+func TokenToMap(token *oauth2.Token) map[string]interface{} {
+	tokenMap := make(map[string]interface{})
+	tokenMap["token_type"] = token.TokenType
+	tokenMap["access_token"] = token.AccessToken
+	tokenMap["refresh_token"] = token.RefreshToken
+	tokenMap["expiry"] = token.Expiry
+	return tokenMap
 }
