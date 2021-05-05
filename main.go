@@ -256,6 +256,18 @@ func CreateCustomClientSecretsFile(userEmail, fileName string, addServiceAccount
 	json.NewEncoder(file).Encode(FILEDATA)
 	return file, err
 }
+func CreateEncryptedTokenFile(config *oauth2.Config, scopes []string, tokenFileName, password string) error {
+	token := GetOAuth2TokensFromBrowser(config, scopes)
+	tokenJson, err := json.Marshal(token)
+	if err != nil {
+		return err
+	}
+	encryptedTokens, err := utils4go.EncryptString(string(tokenJson), password)
+	if err != nil {
+		return err
+	}
+	return utils4go.WriteToFile(tokenFileName, encryptedTokens)
+}
 func TokenToMap(token *oauth2.Token) map[string]interface{} {
 	tokenMap := make(map[string]interface{})
 	tokenMap["token_type"] = token.TokenType
