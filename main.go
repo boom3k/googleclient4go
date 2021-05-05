@@ -268,11 +268,14 @@ func CreateEncryptedTokenFile(config *oauth2.Config, scopes []string, tokenFileN
 	}
 	return utils4go.WriteToFile(tokenFileName, encryptedTokens)
 }
-func TokenToMap(token *oauth2.Token) map[string]interface{} {
-	tokenMap := make(map[string]interface{})
-	tokenMap["token_type"] = token.TokenType
-	tokenMap["access_token"] = token.AccessToken
-	tokenMap["refresh_token"] = token.RefreshToken
-	tokenMap["expiry"] = token.Expiry
-	return tokenMap
+func DecryptTokenFile(encryptedTokenFilePath, password string) *oauth2.Token {
+	decrypted, _ := utils4go.DecryptFile(encryptedTokenFilePath, password)
+	tokenMap := utils4go.ParseJsonFileBytesToMap(decrypted)
+	expiry, _ := time.Parse(time.RFC3339, tokenMap["expiry"].(string))
+	return &oauth2.Token{
+		AccessToken:  tokenMap["access_token"].(string),
+		RefreshToken: tokenMap["refresh_token"].(string),
+		TokenType:    tokenMap["token_type"].(string),
+		Expiry:       expiry,
+	}
 }
